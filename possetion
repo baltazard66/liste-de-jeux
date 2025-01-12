@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Liste de Jeux de Société</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Liste de mes jeux de société</h1>
+        <p>Nombre total de jeux enregistrés : <span id="game-count">0</span></p>
+
+        <ul class="list-group" id="game-list">
+            <!-- Les jeux de société seront ajoutés ici -->
+        </ul>
+
+        <div class="mt-4">
+            <input type="text" id="game-name" class="form-control mb-2" placeholder="Nom du jeu">
+            <input type="text" id="game-variant" class="form-control mb-2" placeholder="Variante (ex: édition 2025)">
+            <button id="add-game" class="btn btn-primary mt-2">Ajouter un jeu</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Charger les jeux depuis le localStorage au démarrage de la page
+        let games = JSON.parse(localStorage.getItem('games')) || [];
+
+        // Fonction pour mettre à jour le compteur
+        function updateGameCount() {
+            const gameCountElement = document.getElementById('game-count');
+            gameCountElement.textContent = games.length;
+        }
+
+        // Fonction pour ajouter un jeu et ses variantes
+        document.getElementById('add-game').addEventListener('click', function() {
+            const gameName = document.getElementById('game-name').value.trim(); // Enlever les espaces autour du texte
+            const gameVariant = document.getElementById('game-variant').value.trim(); // Récupérer la variante
+
+            if (gameName) {
+                // Vérifier si le jeu existe déjà
+                const existingGame = games.find(game => game.name === gameName);
+
+                if (existingGame) {
+                    // Si le jeu existe déjà, ajouter la variante
+                    if (gameVariant && !existingGame.variants.includes(gameVariant)) {
+                        existingGame.variants.push(gameVariant);
+                    } else if (!gameVariant) {
+                        alert("Veuillez entrer une variante si vous ajoutez une nouvelle édition.");
+                    }
+                } else {
+                    // Sinon, créer un nouveau jeu avec sa variante
+                    games.push({ name: gameName, variants: gameVariant ? [gameVariant] : [] });
+                }
+
+                // Mettre à jour l'affichage
+                updateGameList();
+                updateGameCount();
+
+                // Sauvegarder les jeux dans le localStorage
+                localStorage.setItem('games', JSON.stringify(games));
+
+                // Vider les champs de saisie
+                document.getElementById('game-name').value = '';
+                document.getElementById('game-variant').value = '';
+            } else {
+                alert("Veuillez entrer un nom de jeu.");
+            }
+        });
+
+        // Fonction pour mettre à jour la liste des jeux
+        function updateGameList() {
+            const gameListElement = document.getElementById('game-list');
+            gameListElement.innerHTML = ''; // Vider la liste avant de la mettre à jour
+
+            games.forEach(game => {
+                const li = document.createElement('li');
+                li.classList.add('list-group-item');
+                li.textContent = game.name;
+
+                // Afficher les variantes sous le nom du jeu
+                if (game.variants.length > 0) {
+                    const variantsList = document.createElement('ul');
+                    variantsList.classList.add('list-group', 'mt-2');
+
+                    game.variants.forEach((variant, index) => {
+                        const variantItem = document.createElement('li');
+                        variantItem.classList.add('list-group-item', 'list-group-item-secondary');
+                        variantItem.textContent = variant;
+
+                        // Bouton pour supprimer une variante
+                        const deleteVariantButton = document.createElement('button');
+                        deleteVariantButton.classList.add('btn', 'btn-danger', 'btn-sm', 'ms-2');
+                        deleteVariantButton.textContent = 'Supprimer Variante';
+                        deleteVariantButton.onclick = function() {
+                            // Retirer la variante du jeu
+                            game.variants.splice(index, 1);
+                            // Mettre à jour la liste
+                            updateGameList();
+                            // Mettre à jour le compteur
+                            updateGameCount();
+                            // Sauvegarder les jeux dans le localStorage
+                            localStorage.setItem('games', JSON.stringify(games));
+                        };
+
+                        // Ajouter le bouton de suppression de variante
+                        variantItem.appendChild(deleteVariantButton);
+                        variantsList.appendChild(variantItem);
+                    });
+
+                    li.appendChild(variantsList);
+                }
+
+                // Ajouter un bouton pour supprimer tout le jeu
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'ms-2');
+                deleteButton.textContent = 'Supprimer Jeu';
+                deleteButton.onclick = function() {
+                    // Demander confirmation avant de supprimer le jeu
+                    if (confirm(`Êtes-vous sûr de vouloir supprimer le jeu "${game.name}" et toutes ses variantes ?`)) {
+                        // Retirer le jeu de la liste
+                        games = games.filter(g => g.name !== game.name);
+                        // Mettre à jour la liste
+                        updateGameList();
+                        // Mettre à jour le compteur
+                        updateGameCount();
+                        // Sauvegarder les jeux dans le localStorage
+                        localStorage.setItem('games', JSON.stringify(games));
+                    }
+                };
+
+                // Ajouter le bouton de suppression du jeu
+                li.appendChild(deleteButton);
+
+                // Ajouter l'élément à la liste dans le DOM
+                gameListElement.appendChild(li);
+            });
+        }
+
+        // Ajouter un jeu avec la touche "Entrée"
+        document.getElementById('game-name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('add-game').click();  // Simuler le clic sur le bouton
+            }
+        });
+
+        // Mettre à jour l'affichage des jeux au chargement de la page
+        updateGameList();
+        updateGameCount();
+
+    </script>
+    <script>
+</script>
+</body>
+</html>
